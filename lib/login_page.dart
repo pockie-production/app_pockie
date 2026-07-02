@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,6 +13,12 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool _obscureText = true;
   bool _rememberMe = false;
+  bool _isLoading = false;
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  final _authService = AuthService();
 
   final Color pockieGreen = const Color(0xFF52D19A);
   final Color textDark = const Color(0xFF2D3748);
@@ -65,6 +72,7 @@ class _LoginPageState extends State<LoginPage> {
                         _buildTextFieldLabel('Email'),
                         const SizedBox(height: 8),
                         _buildTextField(
+                          controller: _emailController,
                           hintText: 'you@example.com',
                           keyboardType: TextInputType.emailAddress,
                         ),
@@ -72,6 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                         _buildTextFieldLabel('Mật khẩu'),
                         const SizedBox(height: 8),
                         _buildTextField(
+                          controller: _passwordController,
                           hintText: 'Nhập mật khẩu',
                           obscureText: _obscureText,
                           suffixIcon: IconButton(
@@ -141,12 +150,54 @@ class _LoginPageState extends State<LoginPage> {
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => const HomePage()),
-                              );
-                            },
+                            onPressed: _isLoading
+                                ? null
+                                : () async {
+                                    if (_emailController.text.isEmpty ||
+                                        _passwordController.text.isEmpty) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Vui lòng nhập email và mật khẩu'),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+
+                                    final success = await _authService.login(
+                                      _emailController.text.trim(),
+                                      _passwordController.text,
+                                    );
+
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+
+                                    if (success) {
+                                      if (!mounted) return;
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const HomePage()),
+                                      );
+                                    } else {
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Đăng nhập thất bại. Vui lòng kiểm tra lại email/mật khẩu.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: pockieGreen,
                               foregroundColor: Colors.white,
@@ -155,13 +206,23 @@ class _LoginPageState extends State<LoginPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              'Đăng nhập',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Đăng nhập',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -296,11 +357,13 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildTextField({
     required String hintText,
+    TextEditingController? controller,
     bool obscureText = false,
     Widget? suffixIcon,
     TextInputType? keyboardType,
   }) {
     return TextField(
+      controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
       style: TextStyle(color: textDark, fontSize: 15),

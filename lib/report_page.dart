@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'services/report_service.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key});
@@ -13,45 +15,83 @@ class _ReportPageState extends State<ReportPage> {
   final Color _textLight = const Color(0xFF718096);
   final Color _bgColor = const Color(0xFFF9F6F0);
 
+  final _reportService = ReportService();
+  Future<List<dynamic>>? _reportFutures;
+
+  @override
+  void initState() {
+    super.initState();
+    _reportFutures = Future.wait([
+      _reportService.getReportsOverview(),
+      _reportService.getReportsTrends(),
+      _reportService.getTransactionsCategories(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bgColor,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF2D2D2D), // Dark color like in image
-        icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-        label: const Text('AI', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      ),
-      body: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 24),
-              _buildDateSelector(),
-              const SizedBox(height: 16),
-              _buildExportButton(),
-              const SizedBox(height: 24),
-              _buildGridCards(),
-              const SizedBox(height: 24),
-              _buildTrendChart(),
-              const SizedBox(height: 24),
-              _buildTopExpenses(),
-              const SizedBox(height: 24),
-              _buildExpensesByCategory(),
-              const SizedBox(height: 24),
-              _buildRecentTransactions(),
-              const SizedBox(height: 32),
-              _buildFooterText(),
-            ],
+    return FutureBuilder<List<dynamic>>(
+      future: _reportFutures,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final overview = (snapshot.data?[0] as Map<String, dynamic>?) ?? {};
+        final trends = (snapshot.data?[1] as Map<String, dynamic>?) ?? {};
+        final categories = (snapshot.data?[2] as Map<String, dynamic>?) ?? {};
+
+        return Scaffold(
+          backgroundColor: _bgColor,
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () {},
+            backgroundColor: const Color(0xFF2D2D2D), // Dark color like in image
+            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+            label: const Text('AI', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           ),
-        ),
-      ),
+          body: SafeArea(
+            bottom: false,
+            child: RefreshIndicator(
+              onRefresh: () async {
+                setState(() {
+                  _reportFutures = Future.wait([
+                    _reportService.getReportsOverview(),
+                    _reportService.getReportsTrends(),
+                    _reportService.getTransactionsCategories(),
+                  ]);
+                });
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 24),
+                    _buildDateSelector(),
+                    const SizedBox(height: 16),
+                    _buildExportButton(),
+                    const SizedBox(height: 24),
+                    _buildGridCards(overview),
+                    const SizedBox(height: 24),
+                    _buildTrendChart(trends),
+                    const SizedBox(height: 24),
+                    _buildTopExpenses(),
+                    const SizedBox(height: 24),
+                    _buildExpensesByCategory(categories),
+                    const SizedBox(height: 24),
+                    _buildRecentTransactions(),
+                    const SizedBox(height: 32),
+                    _buildFooterText(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -140,7 +180,14 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
-  Widget _buildGridCards() {
+  Widget _buildGridCards(Map<String, dynamic>? overview) {
+    final summary = overview?['summary'] ?? {};
+    final income = summary['income'] ?? '0';
+    final expense = summary['expense'] ?? '0';
+    final balance = summary['balance'] ?? '0';
+    final savingsPercent = summary['savingsPercent']?.toString() ?? '0';
+    final formatter = NumberFormat('#,###', 'vi_VN');
+
     return GridView.count(
       crossAxisCount: 2,
       crossAxisSpacing: 16,
@@ -151,7 +198,7 @@ class _ReportPageState extends State<ReportPage> {
       children: [
         _buildCard(
           title: 'Tổng thu nhập',
-          value: '0 đ',
+          value: '${formatter.format(double.tryParse(income) ?? 0)} đ',
           percentage: '0%',
           isPositive: true,
           icon: Icons.account_balance_wallet_outlined,
@@ -162,7 +209,7 @@ class _ReportPageState extends State<ReportPage> {
         ),
         _buildCard(
           title: 'Tổng chi tiêu',
-          value: '0 đ',
+          value: '${formatter.format(double.tryParse(expense) ?? 0)} đ',
           percentage: '0%',
           isPositive: false,
           icon: Icons.shopping_cart_outlined,
@@ -173,7 +220,7 @@ class _ReportPageState extends State<ReportPage> {
         ),
         _buildCard(
           title: 'Số dư ròng',
-          value: '0 đ',
+          value: '${formatter.format(double.tryParse(balance) ?? 0)} đ',
           percentage: '0%',
           isPositive: true,
           icon: Icons.trending_up,
@@ -184,7 +231,7 @@ class _ReportPageState extends State<ReportPage> {
         ),
         _buildCard(
           title: 'Tỷ lệ tiết kiệm',
-          value: '0%',
+          value: '$savingsPercent%',
           percentage: '0%',
           isPositive: true,
           icon: Icons.pie_chart_outline,
@@ -270,7 +317,7 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
-  Widget _buildTrendChart() {
+  Widget _buildTrendChart(Map<String, dynamic>? trends) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -388,7 +435,11 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
-  Widget _buildExpensesByCategory() {
+  Widget _buildExpensesByCategory(Map<String, dynamic>? categoriesData) {
+    final categories = categoriesData?['items'] as List? ?? [];
+    final totalExpense = categoriesData?['totalExpense'] ?? 0;
+    final formatter = NumberFormat('#,###', 'vi_VN');
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -419,16 +470,22 @@ class _ReportPageState extends State<ReportPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  RichText(
-                    text: TextSpan(
-                      text: '0',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: _textDark),
-                      children: const [
-                        TextSpan(
-                          text: ' đ',
-                          style: TextStyle(decoration: TextDecoration.underline),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: RichText(
+                        text: TextSpan(
+                          text: formatter.format(double.tryParse(totalExpense.toString()) ?? 0),
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: _textDark),
+                          children: const [
+                            TextSpan(
+                              text: ' đ',
+                              style: TextStyle(decoration: TextDecoration.underline),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -438,6 +495,37 @@ class _ReportPageState extends State<ReportPage> {
             ),
           ),
           const SizedBox(height: 40),
+          if (categories.isEmpty)
+            Text('Chưa có dữ liệu danh mục.', style: TextStyle(color: _textLight))
+          else
+            ...categories.map((cat) {
+              final colorStr = (cat['color'] as String?) ?? '#1C885B';
+              final color = Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(cat['categoryName'] ?? 'Khác', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16, color: _textDark)),
+                      ],
+                    ),
+                    Text('${formatter.format(double.tryParse(cat['totalAmount']?.toString() ?? '0') ?? 0)} đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _textDark)),
+                  ],
+                ),
+              );
+            }),
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(

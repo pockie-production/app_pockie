@@ -3,6 +3,8 @@ import 'wallet_page.dart';
 import 'voucher_page.dart';
 import 'report_page.dart';
 import 'smart_scan_page.dart';
+import 'services/dashboard_service.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,6 +21,15 @@ class _HomePageState extends State<HomePage> {
   final Color _textDark = const Color(0xFF2D3748);
   final Color _textLight = const Color(0xFF718096);
   
+  final _dashboardService = DashboardService();
+  Future<Map<String, dynamic>?>? _dashboardFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dashboardFuture = _dashboardService.getHomeDashboard();
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,7 +40,15 @@ class _HomePageState extends State<HomePage> {
           IndexedStack(
             index: _selectedIndex,
             children: [
-              _buildHomeContent(),
+              FutureBuilder<Map<String, dynamic>?>(
+                future: _dashboardFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  return _buildHomeContent(snapshot.data);
+                },
+              ),
               const WalletPage(),
               const VoucherPage(),
               const ReportPage(),
@@ -41,34 +60,44 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHomeContent() {
+  Widget _buildHomeContent(Map<String, dynamic>? data) {
     return SafeArea(
       bottom: false,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildMissionStreakCard(),
-            const SizedBox(height: 16),
-            _buildFinancialMoodCard(),
-            const SizedBox(height: 16),
-            _buildWalletCard(),
-            const SizedBox(height: 16),
-            _buildAIInsightCard(),
-            const SizedBox(height: 16),
-            _buildRecentTransactionsCard(),
-            const SizedBox(height: 16),
-            _buildExpenseCategoriesCard(),
-          ],
+      child: RefreshIndicator(
+        onRefresh: () async {
+          setState(() {
+            _dashboardFuture = _dashboardService.getHomeDashboard();
+          });
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(data),
+              const SizedBox(height: 24),
+              _buildMissionStreakCard(data),
+              const SizedBox(height: 16),
+              _buildFinancialMoodCard(data),
+              const SizedBox(height: 16),
+              _buildWalletCard(data),
+              const SizedBox(height: 16),
+              _buildAIInsightCard(data),
+              const SizedBox(height: 16),
+              _buildRecentTransactionsCard(data),
+              const SizedBox(height: 16),
+              _buildExpenseCategoriesCard(data),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(Map<String, dynamic>? data) {
+    final name = data?['profile']?['name'] ?? 'Bạn';
+    final unreadCount = data?['notifications']?['unreadCount'] ?? 0;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -94,7 +123,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Mi Biển',
+                  name,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
@@ -109,26 +138,28 @@ class _HomePageState extends State<HomePage> {
           clipBehavior: Clip.none,
           children: [
             Icon(Icons.notifications_none, size: 32, color: _textDark),
-            Positioned(
-              right: 2,
-              top: 2,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFED6C61), // Red dot color
-                  shape: BoxShape.circle,
-                  border: Border.all(color: _bgColor, width: 2.5), // creates a cutout effect
+            if (unreadCount > 0)
+              Positioned(
+                right: 2,
+                top: 2,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFED6C61), // Red dot color
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _bgColor, width: 2.5),
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildMissionStreakCard() {
+  Widget _buildMissionStreakCard(Map<String, dynamic>? data) {
+    final streak = data?['streak']?['currentDays'] ?? 0;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -170,8 +201,8 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              const Text(
-                '0',
+              Text(
+                '$streak',
                 style: TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.w900,
@@ -220,7 +251,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildFinancialMoodCard() {
+  Widget _buildFinancialMoodCard(Map<String, dynamic>? data) {
+    final moodTitle = data?['insight']?['title'] ?? 'Tình hình\nchi tiêu\nđang ở\nmức trung\nbình';
+    final moodContent = data?['insight']?['content'] ?? 'Hãy tiếp tục duy trì và theo dõi ngân sách nhé.';
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -247,9 +281,9 @@ class _HomePageState extends State<HomePage> {
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.5,
                 child: Text(
-                  'Tình hình\nchi tiêu\nđang ở\nmức trung\nbình',
+                  moodTitle.toString().replaceAll('. ', '.\n'),
                   style: TextStyle(
-                    fontSize: 26,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
                     color: _textDark,
                     height: 1.3,
@@ -260,7 +294,7 @@ class _HomePageState extends State<HomePage> {
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.5,
                 child: Text(
-                  'Hãy tiếp tục duy trì và theo dõi ngân sách nhé.',
+                  moodContent,
                   style: TextStyle(
                     fontSize: 16,
                     color: _textLight,
@@ -298,7 +332,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildWalletCard() {
+  Widget _buildWalletCard(Map<String, dynamic>? data) {
+    final wallet = data?['wallet'] ?? {};
+    final month = wallet['month'] ?? 'Tháng hiện tại';
+    final spent = wallet['spent'] ?? 0;
+    final remaining = wallet['remaining'] ?? 0;
+    final spentPercent = wallet['spentPercent'] ?? 0.0;
+    final formatter = NumberFormat('#,###', 'vi_VN');
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -334,7 +375,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 child: Row(
                   children: [
-                    Text('Tháng 7', style: TextStyle(color: _textDark, fontWeight: FontWeight.w600)),
+                    Text(month, style: TextStyle(color: _textDark, fontWeight: FontWeight.w600)),
                     const SizedBox(width: 4),
                     const Icon(Icons.keyboard_arrow_down, size: 18),
                   ],
@@ -354,7 +395,7 @@ class _HomePageState extends State<HomePage> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('0', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _textDark)),
+                      Text(formatter.format(spent), style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _textDark)),
                       const SizedBox(width: 4),
                       Padding(
                         padding: const EdgeInsets.only(top: 4.0),
@@ -372,7 +413,7 @@ class _HomePageState extends State<HomePage> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('0', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _primaryGreen)),
+                      Text(formatter.format(remaining), style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _primaryGreen)),
                       const SizedBox(width: 4),
                       Padding(
                         padding: const EdgeInsets.only(top: 4.0),
@@ -396,7 +437,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: FractionallySizedBox(
                     alignment: Alignment.centerLeft,
-                    widthFactor: 0.0, // 0%
+                    widthFactor: (spentPercent / 100).clamp(0.0, 1.0), // from 0 to 1
                     child: Container(
                       decoration: BoxDecoration(
                         color: _primaryGreen,
@@ -408,7 +449,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(width: 12),
               Text(
-                '0%',
+                '${spentPercent.toStringAsFixed(1)}%',
                 style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
@@ -429,7 +470,12 @@ class _HomePageState extends State<HomePage> {
   }
 
 
-  Widget _buildAIInsightCard() {
+  Widget _buildAIInsightCard(Map<String, dynamic>? data) {
+    final insight = data?['insight'] ?? {};
+    final title = insight['title'] ?? 'Tình hình chi tiêu đang ở mức trung bình';
+    final mood = insight['mood'] ?? 'NEUTRAL';
+    final moodColor = mood == 'GOOD' ? Colors.green : (mood == 'BAD' ? Colors.red : Colors.deepOrange);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -460,7 +506,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Tình hình chi tiêu đang ở mức trung bình',
+                  title,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
@@ -502,7 +548,7 @@ class _HomePageState extends State<HomePage> {
               ),
               child: Column(
                 children: [
-                  const Text('NEUTRAL', style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1)),
+                  Text(mood.toUpperCase(), style: TextStyle(color: moodColor, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1)),
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 40,
@@ -522,7 +568,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildRecentTransactionsCard() {
+  Widget _buildRecentTransactionsCard(Map<String, dynamic>? data) {
+    final recentTransactions = data?['recentTransactions'] as List? ?? [];
+    final formatter = NumberFormat('#,###', 'vi_VN');
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -554,20 +602,56 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 32),
-          Text(
-            'Chưa có giao dịch gần đây.',
-            style: TextStyle(
-              fontSize: 16,
-              color: _textLight,
-            ),
-          ),
+          if (recentTransactions.isEmpty)
+            Text(
+              'Chưa có giao dịch gần đây.',
+              style: TextStyle(
+                fontSize: 16,
+                color: _textLight,
+              ),
+            )
+          else
+            ...recentTransactions.map((tx) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.receipt_long, color: _textDark),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(tx['title'] ?? 'Giao dịch', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _textDark)),
+                          const SizedBox(height: 4),
+                          Text(tx['category'] ?? 'Khác', style: TextStyle(color: _textLight, fontSize: 14)),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '-${formatter.format(tx['amount'] ?? 0)}đ',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+                    ),
+                  ],
+                ),
+              );
+            }),
           const SizedBox(height: 12),
         ],
       ),
     );
   }
 
-  Widget _buildExpenseCategoriesCard() {
+  Widget _buildExpenseCategoriesCard(Map<String, dynamic>? data) {
+    final categories = data?['categoryStats']?['items'] as List? ?? [];
+    final formatter = NumberFormat('#,###', 'vi_VN');
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -616,13 +700,42 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 32),
-          Text(
-            'Chưa có dữ liệu danh mục.',
-            style: TextStyle(
-              fontSize: 16,
-              color: _textLight,
-            ),
-          ),
+          if (categories.isEmpty)
+            Text(
+              'Chưa có dữ liệu danh mục.',
+              style: TextStyle(
+                fontSize: 16,
+                color: _textLight,
+              ),
+            )
+          else
+            ...categories.map((cat) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: cat['color'] != null
+                                ? Color(int.parse((cat['color'] as String).replaceFirst('#', '0xFF')))
+                                : _primaryGreen,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(cat['categoryName'] ?? 'Khác', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16, color: _textDark)),
+                      ],
+                    ),
+                    Text('${formatter.format(cat['totalAmount'] ?? 0)}đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _textDark)),
+                  ],
+                ),
+              );
+            }),
           const SizedBox(height: 12),
         ],
       ),
