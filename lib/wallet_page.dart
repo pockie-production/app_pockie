@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class WalletPage extends StatefulWidget {
@@ -106,21 +107,6 @@ class _WalletPageState extends State<WalletPage> {
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('Thêm ví', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: _primaryGreen,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-          ),
         ),
       ],
     );
@@ -318,6 +304,51 @@ class _WalletPageState extends State<WalletPage> {
   }
 
   Widget _buildMyWallets() {
+    final wallets = [
+      {
+        'name': 'MB Bank',
+        'balance': '3.200.000đ',
+        'number': '.... 0897',
+        'colors': [const Color(0xFF2DD486), const Color(0xFF1EA87A)],
+        'isPrimary': true,
+        'iconWidget': Row(
+          children: [
+            const Icon(Icons.star, color: Colors.white, size: 16),
+            const SizedBox(width: 4),
+            const Text('MB', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
+          ],
+        ),
+      },
+      {
+        'name': 'Ví MoMo',
+        'balance': '520.000đ',
+        'number': '.... 1234',
+        'colors': [const Color(0xFFDF81DD), const Color(0xFFC052CA)],
+        'isPrimary': false,
+        'iconWidget': const Text('mo\nmo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white, height: 1.0)),
+      },
+      {
+        'name': 'ZaloPay',
+        'balance': '340.000đ',
+        'number': '.... 4321',
+        'colors': [const Color(0xFF67A1F8), const Color(0xFF458BF3)],
+        'isPrimary': false,
+        'iconWidget': Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
+          child: const Text('Zalo\nPay', style: TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold, height: 1.0)),
+        ),
+      },
+      {
+        'name': 'Tiền mặt',
+        'balance': '1.500.000đ',
+        'number': '',
+        'colors': [const Color(0xFFFBB362), const Color(0xFFF2913D)],
+        'isPrimary': false,
+        'iconWidget': const Icon(Icons.payments_outlined, color: Colors.white, size: 28),
+      },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -326,36 +357,144 @@ class _WalletPageState extends State<WalletPage> {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textDark),
         ),
         const SizedBox(height: 16),
-        _buildWalletItem(icon: Icons.account_balance_wallet, iconBgColor: Colors.green.shade100, iconColor: Colors.green, title: 'Ví tiền mặt', amount: '5,000,000đ'),
-        _buildWalletItem(icon: Icons.account_balance, iconBgColor: Colors.blue.shade100, iconColor: Colors.blue, title: 'Vietcombank', amount: '3,000,000đ'),
-        _buildWalletItem(icon: Icons.phone_android, iconBgColor: Colors.pink.shade100, iconColor: Colors.pink, title: 'Momo', amount: '2,000,000đ'),
+        SizedBox(
+          height: 170,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            children: [
+              GestureDetector(
+                onTap: () {},
+                child: Container(
+                  width: 60,
+                  height: 170,
+                  margin: const EdgeInsets.only(right: 16),
+                  child: CustomPaint(
+                    painter: _DashedBorderPainter(),
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF2D3748),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.add, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              ...wallets.map((w) => _buildHorizontalWalletCard(w)).toList(),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildWalletItem({required IconData icon, required Color iconBgColor, required Color iconColor, required String title, required String amount}) {
+  Widget _buildHorizontalWalletCard(Map<String, dynamic> w) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      width: 150,
+      margin: const EdgeInsets.only(right: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 24),
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: w['colors'] as List<Color>,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (w['colors'] as List<Color>)[0].withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(width: 16),
-          Expanded(child: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _textDark))),
-          Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              w['isPrimary'] == true
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.push_pin, color: Colors.white, size: 10),
+                          SizedBox(width: 4),
+                          Text('Thẻ chính', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    )
+                  : const SizedBox(),
+              const Icon(Icons.star_border, color: Colors.white, size: 20),
+            ],
+          ),
+          const Spacer(),
+          w['iconWidget'] as Widget,
+          const SizedBox(height: 12),
+          Text(
+            w['name'] as String,
+            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            w['balance'] as String,
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          if ((w['number'] as String).isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              w['number'] as String,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+            ),
+          ]
         ],
       ),
     );
   }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.grey.shade400
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        const Radius.circular(20),
+      ));
+
+    final dashedPath = Path();
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      bool draw = true;
+      while (distance < metric.length) {
+        final length = draw ? 6.0 : 4.0;
+        if (draw) {
+          dashedPath.addPath(metric.extractPath(distance, distance + length), Offset.zero);
+        }
+        distance += length;
+        draw = !draw;
+      }
+    }
+    canvas.drawPath(dashedPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _CurvedLinePainter extends CustomPainter {

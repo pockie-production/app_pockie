@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'wallet_page.dart';
 import 'voucher_page.dart';
 import 'report_page.dart';
+import 'smart_scan_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -84,18 +85,18 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Pockie luôn ở đây cùng bạn',
+                  'Xin chào!',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: _textLight,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '✌️ Chào mi biển!',
+                  'Mi Biển',
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: FontWeight.w900,
                     color: _textDark,
                   ),
@@ -139,8 +140,6 @@ class _HomePageState extends State<HomePage> {
         children: [
           Row(
             children: [
-              const Text('🏆', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
               Text(
                 'Mission hôm nay',
                 style: TextStyle(
@@ -156,8 +155,6 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 20),
           Row(
             children: [
-              const Text('🔥', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 8),
               const Text(
                 'Streak',
                 style: TextStyle(
@@ -680,7 +677,12 @@ class _HomePageState extends State<HomePage> {
             Positioned(
               top: 0,
               child: GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SmartScanPage()),
+                  );
+                },
                 child: Container(
                   width: 60,
                   height: 60,
