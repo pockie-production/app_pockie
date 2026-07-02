@@ -145,7 +145,7 @@ class _ReportPageState extends State<ReportPage> {
       crossAxisCount: 2,
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-      childAspectRatio: 0.75,
+      childAspectRatio: 1.0,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       children: [
@@ -217,16 +217,16 @@ class _ReportPageState extends State<ReportPage> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: iconBgColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: iconColor, size: 28),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
+          const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -238,64 +238,33 @@ class _ReportPageState extends State<ReportPage> {
                   color: _textLight,
                 ),
               ),
-              const SizedBox(height: 8),
-              RichText(
-                text: TextSpan(
-                  text: value.replaceAll(' đ', '').replaceAll('%', ''),
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    color: _textDark,
-                  ),
-                  children: [
-                    if (value.contains('đ'))
-                      const TextSpan(
-                        text: ' đ',
-                        style: TextStyle(
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    if (value.contains('%'))
-                      const TextSpan(
-                        text: '%',
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                isPositive ? Icons.arrow_upward : Icons.arrow_upward,
-                color: isPositive ? const Color(0xFF26865A) : const Color(0xFFC75B5B),
-                size: 16,
-              ),
-              const SizedBox(width: 4),
-              Expanded(
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
                 child: RichText(
                   text: TextSpan(
-                    text: '$percentage  ',
+                    text: value.replaceAll(' đ', '').replaceAll('%', ''),
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isPositive ? const Color(0xFF26865A) : const Color(0xFFC75B5B),
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: _textDark,
                     ),
                     children: [
-                      TextSpan(
-                        text: 'so với tháng\ntrước',
-                        style: TextStyle(
-                          fontWeight: FontWeight.normal,
-                          color: _textLight,
+                      if (value.contains('đ'))
+                        const TextSpan(
+                          text: ' đ',
                         ),
-                      ),
+                      if (value.contains('%'))
+                        const TextSpan(
+                          text: '%',
+                        ),
                     ],
                   ),
                 ),
               ),
             ],
           ),
+
         ],
       ),
     );
