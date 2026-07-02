@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'home_page.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginPage extends StatefulWidget {
@@ -140,7 +141,12 @@ class _LoginPageState extends State<LoginPage> {
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => const HomePage()),
+                              );
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: pockieGreen,
                               foregroundColor: Colors.white,
