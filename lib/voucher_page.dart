@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'services/voucher_service.dart';
 import 'package:intl/intl.dart';
+import 'settings_page.dart';
 
 class VoucherPage extends StatefulWidget {
   const VoucherPage({super.key});
@@ -77,6 +79,20 @@ class _VoucherPageState extends State<VoucherPage> {
       children: [
         Row(
           children: [
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsPage()),
+                );
+              },
+              child: const CircleAvatar(
+                radius: 24,
+                backgroundColor: Color(0xFFF3C755),
+                child: Icon(CupertinoIcons.person_solid, color: Colors.white, size: 28),
+              ),
+            ),
+            const SizedBox(width: 16),
             Text(
               'Voucher của bạn',
               style: TextStyle(
@@ -111,7 +127,7 @@ class _VoucherPageState extends State<VoucherPage> {
           title: 'Tổng voucher',
           value: '$totalVouchers',
           unit: 'voucher',
-          icon: Icons.confirmation_number_outlined,
+          icon: CupertinoIcons.ticket,
           iconColor: const Color(0xFFF0CA4D),
           iconBgColor: const Color(0xFFFDF8E8),
           borderColor: const Color(0xFFFCEECA),
@@ -122,7 +138,7 @@ class _VoucherPageState extends State<VoucherPage> {
           title: 'Tổng giá trị',
           value: formatter.format(totalValue),
           unit: 'đ',
-          icon: Icons.account_balance_wallet_outlined,
+          icon: CupertinoIcons.creditcard,
           iconColor: const Color(0xFF24A87C),
           iconBgColor: const Color(0xFFE8F6F1),
           borderColor: const Color(0xFFCBECE1),
@@ -134,7 +150,7 @@ class _VoucherPageState extends State<VoucherPage> {
           title: 'Sắp hết hạn',
           value: '$expiringSoon',
           unit: 'voucher',
-          icon: Icons.access_time,
+          icon: CupertinoIcons.clock,
           iconColor: const Color(0xFFED5D65),
           iconBgColor: const Color(0xFFFCECEE),
           borderColor: const Color(0xFFFAD1D4),
@@ -314,7 +330,7 @@ class _VoucherPageState extends State<VoucherPage> {
     }
 
     // Default icon
-    IconData tagIcon = Icons.local_offer_outlined;
+    IconData tagIcon = CupertinoIcons.tag;
     if (v['tagIcon'] != null && v['tagIcon'] is IconData) {
       tagIcon = v['tagIcon'];
     }
