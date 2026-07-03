@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'services/wallet_service.dart';
+import 'package:intl/intl.dart';
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
@@ -16,27 +18,62 @@ class _WalletPageState extends State<WalletPage> {
 
   int _selectedTab = 1; // 0: 1T, 1: 3T, 2: 6T, 3: 1N
 
+  final _walletService = WalletService();
+  Future<List<dynamic>>? _walletFutures;
+
+  @override
+  void initState() {
+    super.initState();
+    _walletFutures = Future.wait([
+      _walletService.getWalletsOverview(),
+      _walletService.getWalletsAccounts(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildActionButtons(),
-            const SizedBox(height: 24),
-            _buildTotalAssetCard(),
-            const SizedBox(height: 32),
-            _buildAssetAllocation(),
-            const SizedBox(height: 32),
-            _buildMyWallets(),
-          ],
-        ),
-      ),
+    return FutureBuilder<List<dynamic>>(
+      future: _walletFutures,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final overview = snapshot.data?[0] ?? {};
+        final accountsData = snapshot.data?[1] ?? {};
+        
+        return SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            onRefresh: () async {
+              setState(() {
+                _walletFutures = Future.wait([
+                  _walletService.getWalletsOverview(),
+                  _walletService.getWalletsAccounts(),
+                ]);
+              });
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 24),
+                  _buildActionButtons(),
+                  const SizedBox(height: 24),
+                  _buildTotalAssetCard(overview),
+                  const SizedBox(height: 32),
+                  _buildAssetAllocation(overview),
+                  const SizedBox(height: 32),
+                  _buildMyWallets(accountsData),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -112,7 +149,11 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  Widget _buildTotalAssetCard() {
+  Widget _buildTotalAssetCard(Map<String, dynamic>? overview) {
+    final summary = overview?['summary'] ?? {};
+    final balance = summary['balance'] ?? '0';
+    final diffAmount = summary['diffAmount'] ?? '0';
+    final formatter = NumberFormat('#,###', 'vi_VN');
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -140,7 +181,7 @@ class _WalletPageState extends State<WalletPage> {
           ),
           const SizedBox(height: 16),
           Text(
-            '0đ',
+              '${formatter.format(double.tryParse(balance) ?? 0)}đ',
             style: TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w900,
@@ -154,7 +195,7 @@ class _WalletPageState extends State<WalletPage> {
               Icon(Icons.arrow_downward, color: Colors.green.shade400, size: 16),
               const SizedBox(width: 4),
               Text(
-                'so với tháng trước',
+                '${formatter.format(double.tryParse(diffAmount) ?? 0)}đ so với tháng trước',
                 style: TextStyle(color: _textLight, fontSize: 14),
               ),
             ],
@@ -164,7 +205,7 @@ class _WalletPageState extends State<WalletPage> {
           const SizedBox(height: 24),
           _buildChartArea(),
           const SizedBox(height: 24),
-          _buildSummaryFooter(),
+          _buildSummaryFooter(summary),
         ],
       ),
     );
@@ -214,21 +255,25 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  Widget _buildSummaryFooter() {
+  Widget _buildSummaryFooter(Map<String, dynamic>? summary) {
+    final income = summary?['income'] ?? '0';
+    final expense = summary?['expense'] ?? '0';
+    final savingsPercent = summary?['savingsPercent'] ?? 0;
+    final formatter = NumberFormat('#,###', 'vi_VN');
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
           Expanded(
-            child: _buildSummaryBox('Thu nhập', '0đ', const Color(0xFFE8F5EE), _primaryGreen),
+            child: _buildSummaryBox('Thu nhập', '${formatter.format(double.tryParse(income) ?? 0)}đ', const Color(0xFFE8F5EE), _primaryGreen),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _buildSummaryBox('Chi tiêu', '0đ', const Color(0xFFE8F5EE), _primaryGreen),
+            child: _buildSummaryBox('Chi tiêu', '${formatter.format(double.tryParse(expense) ?? 0)}đ', const Color(0xFFE8F5EE), _primaryGreen),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _buildSummaryBox('Tiết kiệm', '0đ', const Color(0xFFE8F5EE), _yellow),
+            child: _buildSummaryBox('Tiết kiệm', '$savingsPercent%', const Color(0xFFE8F5EE), _yellow),
           ),
         ],
       ),
@@ -252,7 +297,9 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  Widget _buildAssetAllocation() {
+  Widget _buildAssetAllocation(Map<String, dynamic>? overview) {
+    final allocations = overview?['allocations'] as List? ?? [];
+    final formatter = NumberFormat('#,###', 'vi_VN');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -270,19 +317,41 @@ class _WalletPageState extends State<WalletPage> {
           ),
           child: Column(
             children: [
-              Row(
-                children: [
-                  Expanded(flex: 5, child: Container(height: 16, decoration: BoxDecoration(color: _primaryGreen, borderRadius: const BorderRadius.horizontal(left: Radius.circular(8))))),
-                  Expanded(flex: 3, child: Container(height: 16, color: _yellow)),
-                  Expanded(flex: 2, child: Container(height: 16, decoration: BoxDecoration(color: Colors.blueAccent, borderRadius: const BorderRadius.horizontal(right: Radius.circular(8))))),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _buildAllocationItem(color: _primaryGreen, title: 'Tiền mặt', percentage: '50%', amount: '5,000,000đ'),
-              const Divider(height: 24),
-              _buildAllocationItem(color: _yellow, title: 'Tài khoản ngân hàng', percentage: '30%', amount: '3,000,000đ'),
-              const Divider(height: 24),
-              _buildAllocationItem(color: Colors.blueAccent, title: 'Đầu tư', percentage: '20%', amount: '2,000,000đ'),
+              if (allocations.isEmpty)
+                Text('Chưa có dữ liệu phân bổ.', style: TextStyle(color: _textLight))
+              else ...[
+                Row(
+                  children: allocations.map((a) {
+                    final p = double.tryParse(a['percent']?.toString() ?? '0') ?? 0;
+                    if (p <= 0) return const SizedBox.shrink();
+                    final colorStr = (a['color'] as String?) ?? '#1C885B';
+                    final color = Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
+                    return Expanded(
+                      flex: p.toInt(),
+                      child: Container(height: 16, color: color),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+                ...allocations.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final a = entry.value;
+                  final colorStr = (a['color'] as String?) ?? '#1C885B';
+                  final color = Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
+                  return Column(
+                    children: [
+                      _buildAllocationItem(
+                        color: color,
+                        title: a['title'] ?? 'Khác',
+                        percentage: '${a['percent'] ?? 0}%',
+                        amount: '${formatter.format(double.tryParse(a['amount']?.toString() ?? '0') ?? 0)}đ',
+                      ),
+                      if (idx < allocations.length - 1)
+                        const Divider(height: 24),
+                    ],
+                  );
+                }),
+              ],
             ],
           ),
         ),
@@ -303,51 +372,59 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  Widget _buildMyWallets() {
-    final wallets = [
-      {
-        'name': 'MB Bank',
-        'balance': '3.200.000đ',
-        'number': '.... 0897',
-        'colors': [const Color(0xFF2DD486), const Color(0xFF1EA87A)],
-        'isPrimary': true,
-        'iconWidget': Row(
-          children: [
-            const Icon(Icons.star, color: Colors.white, size: 16),
-            const SizedBox(width: 4),
-            const Text('MB', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
-          ],
-        ),
-      },
-      {
-        'name': 'Ví MoMo',
-        'balance': '520.000đ',
-        'number': '.... 1234',
-        'colors': [const Color(0xFFDF81DD), const Color(0xFFC052CA)],
-        'isPrimary': false,
-        'iconWidget': const Text('mo\nmo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white, height: 1.0)),
-      },
-      {
-        'name': 'ZaloPay',
-        'balance': '340.000đ',
-        'number': '.... 4321',
-        'colors': [const Color(0xFF67A1F8), const Color(0xFF458BF3)],
-        'isPrimary': false,
-        'iconWidget': Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
-          child: const Text('Zalo\nPay', style: TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold, height: 1.0)),
-        ),
-      },
-      {
-        'name': 'Tiền mặt',
-        'balance': '1.500.000đ',
-        'number': '',
-        'colors': [const Color(0xFFFBB362), const Color(0xFFF2913D)],
-        'isPrimary': false,
-        'iconWidget': const Icon(Icons.payments_outlined, color: Colors.white, size: 28),
-      },
-    ];
+  Widget _buildMyWallets(Map<String, dynamic>? accountsData) {
+    final rawAccounts = accountsData?['accounts'] as List? ?? [];
+    final formatter = NumberFormat('#,###', 'vi_VN');
+
+    // Convert raw API accounts to local format
+    final wallets = rawAccounts.map((acc) {
+      final type = acc['type'] as String? ?? 'cash';
+      
+      Color color1, color2;
+      Widget iconWidget;
+
+      switch (type) {
+        case 'mb':
+          color1 = const Color(0xFF2DD486);
+          color2 = const Color(0xFF1EA87A);
+          iconWidget = Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.star, color: Colors.white, size: 16),
+              const SizedBox(width: 4),
+              const Text('MB', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
+            ],
+          );
+          break;
+        case 'momo':
+          color1 = const Color(0xFFDF81DD);
+          color2 = const Color(0xFFC052CA);
+          iconWidget = const Text('mo\nmo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white, height: 1.0));
+          break;
+        case 'zalopay':
+          color1 = const Color(0xFF67A1F8);
+          color2 = const Color(0xFF458BF3);
+          iconWidget = Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
+            child: const Text('Zalo\nPay', style: TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold, height: 1.0)),
+          );
+          break;
+        default:
+          color1 = const Color(0xFFFBB362);
+          color2 = const Color(0xFFF2913D);
+          iconWidget = const Icon(Icons.payments_outlined, color: Colors.white, size: 28);
+      }
+
+      return {
+        'name': acc['name'] ?? 'Tài khoản',
+        'balance': '${formatter.format(double.tryParse(acc['balance']?.toString() ?? '0') ?? 0)}đ',
+        'number': acc['accountNumber'] ?? '',
+        'colors': [color1, color2],
+        'isPrimary': acc['isPrimary'] == true,
+        'iconWidget': iconWidget,
+      };
+    }).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

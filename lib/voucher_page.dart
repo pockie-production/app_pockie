@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'services/voucher_service.dart';
+import 'package:intl/intl.dart';
 
 class VoucherPage extends StatefulWidget {
   const VoucherPage({super.key});
@@ -14,24 +16,58 @@ class _VoucherPageState extends State<VoucherPage> {
   final Color _textLight = const Color(0xFF718096);
   final Color _pink = const Color(0xFFE8416B);
 
+  final _voucherService = VoucherService();
+  Future<List<dynamic>>? _voucherFutures;
+
+  @override
+  void initState() {
+    super.initState();
+    _voucherFutures = Future.wait([
+      _voucherService.getVoucherStats(),
+      _voucherService.getVoucherList(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: SingleChildScrollView(
-        padding:
-            const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildVoucherStats(),
-            const SizedBox(height: 24),
-            _buildVoucherList(),
-          ],
-        ),
-      ),
+    return FutureBuilder<List<dynamic>>(
+      future: _voucherFutures,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final stats = (snapshot.data?[0] as Map<String, dynamic>?) ?? {};
+        final vouchers = (snapshot.data?[1] as List<dynamic>?) ?? [];
+
+        return SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            onRefresh: () async {
+              setState(() {
+                _voucherFutures = Future.wait([
+                  _voucherService.getVoucherStats(),
+                  _voucherService.getVoucherList(),
+                ]);
+              });
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 24),
+                  _buildVoucherStats(stats),
+                  const SizedBox(height: 24),
+                  _buildVoucherList(vouchers),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -63,12 +99,17 @@ class _VoucherPageState extends State<VoucherPage> {
     );
   }
 
-  Widget _buildVoucherStats() {
+  Widget _buildVoucherStats(Map<String, dynamic>? stats) {
+    final totalVouchers = stats?['totalVouchers'] ?? 0;
+    final totalValue = stats?['totalValue'] ?? 0;
+    final expiringSoon = stats?['expiringSoon'] ?? 0;
+    final formatter = NumberFormat('#,###', 'vi_VN');
+
     return Column(
       children: [
         _buildStatCard(
           title: 'Tổng voucher',
-          value: '12',
+          value: '$totalVouchers',
           unit: 'voucher',
           icon: Icons.confirmation_number_outlined,
           iconColor: const Color(0xFFF0CA4D),
@@ -79,7 +120,7 @@ class _VoucherPageState extends State<VoucherPage> {
         const SizedBox(height: 16),
         _buildStatCard(
           title: 'Tổng giá trị',
-          value: '1.450.000',
+          value: formatter.format(totalValue),
           unit: 'đ',
           icon: Icons.account_balance_wallet_outlined,
           iconColor: const Color(0xFF24A87C),
@@ -91,7 +132,7 @@ class _VoucherPageState extends State<VoucherPage> {
         const SizedBox(height: 16),
         _buildStatCard(
           title: 'Sắp hết hạn',
-          value: '3',
+          value: '$expiringSoon',
           unit: 'voucher',
           icon: Icons.access_time,
           iconColor: const Color(0xFFED5D65),
@@ -220,42 +261,20 @@ class _VoucherPageState extends State<VoucherPage> {
     );
   }
 
-  Widget _buildVoucherList() {
-    final mockVouchers = [
-      {
-        'title': 'Giảm 15%',
-        'desc': 'Đơn tối thiểu 250K',
-        'tag': 'Mua sắm',
-        'tagIcon': Icons.shopping_bag_outlined,
-        'image': 'assets/images/shopee.jpg',
-        'tagColor': const Color(0xFF1EA87A),
-      },
-      {
-        'title': 'Hoàn tiền 10%',
-        'desc': 'Tối đa 50K',
-        'tag': 'Ăn uống',
-        'tagIcon': Icons.local_cafe_outlined,
-        'image': 'assets/images/hc.png',
-        'tagColor': Colors.brown,
-      },
-      {
-        'title': 'Giảm 20K',
-        'desc': 'Áp dụng GrabBike/GrabCar',
-        'tag': 'Di chuyển',
-        'tagIcon': Icons.directions_car_outlined,
-        'image': 'assets/images/grab.jpg',
-        'tagColor': Colors.green,
-      },
-      {
-        'title': 'Nạp thẻ giảm 5%',
-        'desc': 'Tối đa 20K',
-        'tag': 'Tiện ích',
-        'tagIcon': Icons.phone_android_outlined,
-        'image': 'assets/images/momo.png',
-        'tagColor': Colors.pink,
-      },
-    ];
-
+  Widget _buildVoucherList(List<dynamic>? vouchers) {
+    if (vouchers == null || vouchers.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Ưu đãi dành cho bạn',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textDark),
+          ),
+          const SizedBox(height: 16),
+          Text('Chưa có voucher nào.', style: TextStyle(color: _textLight)),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -275,13 +294,33 @@ class _VoucherPageState extends State<VoucherPage> {
           childAspectRatio: 0.75,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          children: mockVouchers.map((v) => _buildVoucherCard(v)).toList(),
+          children: vouchers.map((v) => _buildVoucherCard(v as Map<String, dynamic>)).toList(),
         ),
       ],
     );
   }
 
   Widget _buildVoucherCard(Map<String, dynamic> v) {
+    final title = v['title'] ?? 'Voucher';
+    final desc = v['desc'] ?? v['description'] ?? 'Mô tả';
+    final tag = v['tag'] ?? 'Khuyến mãi';
+    
+    // Parse color or fallback
+    Color tagColor = _primaryGreen;
+    if (v['tagColor'] != null && v['tagColor'] is String) {
+      tagColor = Color(int.parse((v['tagColor'] as String).replaceFirst('#', '0xFF')));
+    } else if (v['tagColor'] != null && v['tagColor'] is Color) {
+      tagColor = v['tagColor'];
+    }
+
+    // Default icon
+    IconData tagIcon = Icons.local_offer_outlined;
+    if (v['tagIcon'] != null && v['tagIcon'] is IconData) {
+      tagIcon = v['tagIcon'];
+    }
+
+    final imagePath = v['image'] ?? 'assets/images/shopee.jpg';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -298,7 +337,9 @@ class _VoucherPageState extends State<VoucherPage> {
               child: Center(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(v['image'], fit: BoxFit.contain),
+                  child: imagePath.toString().startsWith('http')
+                      ? Image.network(imagePath, fit: BoxFit.contain)
+                      : Image.asset(imagePath, fit: BoxFit.contain),
                 ),
               ),
             ),
@@ -318,20 +359,20 @@ class _VoucherPageState extends State<VoucherPage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: (v['tagColor'] as Color).withOpacity(0.1),
+                      color: tagColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(v['tagIcon'], size: 14, color: v['tagColor']),
+                        Icon(tagIcon, size: 14, color: tagColor),
                         const SizedBox(width: 4),
                         Text(
-                          v['tag'],
+                          tag,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: v['tagColor'],
+                            color: tagColor,
                           ),
                         ),
                       ],
@@ -339,7 +380,7 @@ class _VoucherPageState extends State<VoucherPage> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    v['title'],
+                    title,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -350,7 +391,7 @@ class _VoucherPageState extends State<VoucherPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    v['desc'],
+                    desc,
                     style: TextStyle(
                       fontSize: 13,
                       color: _textLight,
