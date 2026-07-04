@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'services/report_service.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'settings_page.dart';
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key});
@@ -45,10 +47,14 @@ class _ReportPageState extends State<ReportPage> {
           backgroundColor: _bgColor,
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () {},
-            backgroundColor: const Color(0xFF2D2D2D), // Dark color like in image
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-            label: const Text('AI', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            backgroundColor:
+                const Color(0xFF2D2D2D), // Dark color like in image
+            icon: const Icon(CupertinoIcons.chat_bubble, color: Colors.white),
+            label: const Text('AI',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           ),
           body: SafeArea(
             bottom: false,
@@ -64,15 +70,14 @@ class _ReportPageState extends State<ReportPage> {
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
+                padding: const EdgeInsets.only(
+                    left: 20, right: 20, top: 20, bottom: 120),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildHeader(),
                     const SizedBox(height: 24),
                     _buildDateSelector(),
-                    const SizedBox(height: 16),
-                    _buildExportButton(),
                     const SizedBox(height: 24),
                     _buildGridCards(overview),
                     const SizedBox(height: 24),
@@ -101,6 +106,20 @@ class _ReportPageState extends State<ReportPage> {
       children: [
         Row(
           children: [
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsPage()),
+                );
+              },
+              child: const CircleAvatar(
+                radius: 24,
+                backgroundColor: Color(0xFFF3C755),
+                child: Icon(CupertinoIcons.person_solid, color: Colors.white, size: 28),
+              ),
+            ),
+            const SizedBox(width: 16),
             Text(
               'Báo cáo',
               style: TextStyle(
@@ -109,8 +128,6 @@ class _ReportPageState extends State<ReportPage> {
                 color: _textDark,
               ),
             ),
-            const SizedBox(width: 8),
-            Icon(Icons.insert_chart_outlined, color: _primaryGreen, size: 32),
           ],
         ),
         const SizedBox(height: 8),
@@ -136,10 +153,10 @@ class _ReportPageState extends State<ReportPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.calendar_today_outlined, color: _textDark, size: 20),
+          Icon(CupertinoIcons.calendar, color: _textDark, size: 20),
           const SizedBox(width: 12),
           Text(
-            '01/05/2025 - 31/05/2025',
+            '01/07/2026 - 31/07/2026',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
@@ -147,34 +164,7 @@ class _ReportPageState extends State<ReportPage> {
             ),
           ),
           const SizedBox(width: 8),
-          Icon(Icons.keyboard_arrow_down, color: _textDark, size: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExportButton() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.download_outlined, color: _textDark, size: 20),
-          const SizedBox(width: 12),
-          Text(
-            'Xuất báo cáo',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: _textDark,
-            ),
-          ),
+          Icon(CupertinoIcons.chevron_down, color: _textDark, size: 20),
         ],
       ),
     );
@@ -201,7 +191,7 @@ class _ReportPageState extends State<ReportPage> {
           value: '${formatter.format(double.tryParse(income) ?? 0)} đ',
           percentage: '0%',
           isPositive: true,
-          icon: Icons.account_balance_wallet_outlined,
+          icon: CupertinoIcons.creditcard,
           iconColor: const Color(0xFF26865A),
           iconBgColor: const Color(0xFFE4F3EB),
           bgColor: const Color(0xFFF4FBF7),
@@ -223,7 +213,7 @@ class _ReportPageState extends State<ReportPage> {
           value: '${formatter.format(double.tryParse(balance) ?? 0)} đ',
           percentage: '0%',
           isPositive: true,
-          icon: Icons.trending_up,
+          icon: CupertinoIcons.graph_square,
           iconColor: const Color(0xFF26865A),
           iconBgColor: const Color(0xFFE4F3EB),
           bgColor: const Color(0xFFF4FBF7),
@@ -234,7 +224,7 @@ class _ReportPageState extends State<ReportPage> {
           value: '$savingsPercent%',
           percentage: '0%',
           isPositive: true,
-          icon: Icons.pie_chart_outline,
+          icon: CupertinoIcons.chart_pie,
           iconColor: const Color(0xFFD59345),
           iconBgColor: const Color(0xFFFDEFD5),
           bgColor: const Color(0xFFF4FBF7),
@@ -311,7 +301,6 @@ class _ReportPageState extends State<ReportPage> {
               ),
             ],
           ),
-
         ],
       ),
     );
@@ -336,27 +325,33 @@ class _ReportPageState extends State<ReportPage> {
                     Flexible(
                       child: Text(
                         'Xu hướng thu chi',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textDark),
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: _textDark),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(Icons.info_outline, color: Colors.grey.shade400, size: 20),
+                    Icon(Icons.info_outline,
+                        color: Colors.grey.shade400, size: 20),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    Text('Theo ngày', style: TextStyle(fontSize: 14, color: _textDark)),
+                    Text('Theo ngày',
+                        style: TextStyle(fontSize: 14, color: _textDark)),
                     const SizedBox(width: 4),
-                    Icon(Icons.keyboard_arrow_down, color: _textDark, size: 16),
+                    Icon(CupertinoIcons.chevron_down, color: _textDark, size: 16),
                   ],
                 ),
               ),
@@ -399,7 +394,9 @@ class _ReportPageState extends State<ReportPage> {
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: _textDark, fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(label,
+              style: TextStyle(
+                  color: _textDark, fontSize: 14, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -416,7 +413,9 @@ class _ReportPageState extends State<ReportPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Top danh mục chi tiêu', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textDark)),
+          Text('Top danh mục chi tiêu',
+              style: TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.bold, color: _textDark)),
           const SizedBox(height: 60), // Placeholder for content
           SizedBox(
             width: double.infinity,
@@ -425,9 +424,14 @@ class _ReportPageState extends State<ReportPage> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 side: BorderSide(color: Colors.grey.shade300),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
-              child: Text('Xem tất cả danh mục', style: TextStyle(color: _textDark, fontWeight: FontWeight.bold, fontSize: 15)),
+              child: Text('Xem tất cả danh mục',
+                  style: TextStyle(
+                      color: _textDark,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15)),
             ),
           ),
         ],
@@ -450,7 +454,9 @@ class _ReportPageState extends State<ReportPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Chi tiêu theo danh mục', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textDark)),
+          Text('Chi tiêu theo danh mục',
+              style: TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.bold, color: _textDark)),
           const SizedBox(height: 40),
           Center(
             child: Container(
@@ -476,12 +482,17 @@ class _ReportPageState extends State<ReportPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: RichText(
                         text: TextSpan(
-                          text: formatter.format(double.tryParse(totalExpense.toString()) ?? 0),
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: _textDark),
+                          text: formatter.format(
+                              double.tryParse(totalExpense.toString()) ?? 0),
+                          style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: _textDark),
                           children: const [
                             TextSpan(
                               text: ' đ',
-                              style: TextStyle(decoration: TextDecoration.underline),
+                              style: TextStyle(
+                                  decoration: TextDecoration.underline),
                             ),
                           ],
                         ),
@@ -489,18 +500,21 @@ class _ReportPageState extends State<ReportPage> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text('Tổng chi tiêu', style: TextStyle(color: _textLight, fontSize: 13)),
+                  Text('Tổng chi tiêu',
+                      style: TextStyle(color: _textLight, fontSize: 13)),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 40),
           if (categories.isEmpty)
-            Text('Chưa có dữ liệu danh mục.', style: TextStyle(color: _textLight))
+            Text('Chưa có dữ liệu danh mục.',
+                style: TextStyle(color: _textLight))
           else
             ...categories.map((cat) {
               final colorStr = (cat['color'] as String?) ?? '#1C885B';
-              final color = Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
+              final color =
+                  Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Row(
@@ -517,10 +531,19 @@ class _ReportPageState extends State<ReportPage> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(cat['categoryName'] ?? 'Khác', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16, color: _textDark)),
+                        Text(cat['categoryName'] ?? 'Khác',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 16,
+                                color: _textDark)),
                       ],
                     ),
-                    Text('${formatter.format(double.tryParse(cat['totalAmount']?.toString() ?? '0') ?? 0)} đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _textDark)),
+                    Text(
+                        '${formatter.format(double.tryParse(cat['totalAmount']?.toString() ?? '0') ?? 0)} đ',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: _textDark)),
                   ],
                 ),
               );
@@ -533,9 +556,14 @@ class _ReportPageState extends State<ReportPage> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 side: BorderSide(color: Colors.grey.shade300),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
-              child: Text('Xem chi tiết', style: TextStyle(color: _textDark, fontWeight: FontWeight.bold, fontSize: 15)),
+              child: Text('Xem chi tiết',
+                  style: TextStyle(
+                      color: _textDark,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15)),
             ),
           ),
         ],
@@ -554,7 +582,9 @@ class _ReportPageState extends State<ReportPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Giao dịch gần đây', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textDark)),
+          Text('Giao dịch gần đây',
+              style: TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.bold, color: _textDark)),
           const SizedBox(height: 60), // Placeholder for content
           SizedBox(
             width: double.infinity,
@@ -563,9 +593,14 @@ class _ReportPageState extends State<ReportPage> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 side: BorderSide(color: Colors.grey.shade300),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
-              child: Text('Xem tất cả giao dịch', style: TextStyle(color: _textDark, fontWeight: FontWeight.bold, fontSize: 15)),
+              child: Text('Xem tất cả giao dịch',
+                  style: TextStyle(
+                      color: _textDark,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15)),
             ),
           ),
         ],
@@ -580,7 +615,7 @@ class _ReportPageState extends State<ReportPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.lock_outline, color: _textLight, size: 16),
+          Icon(CupertinoIcons.lock, color: _textLight, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -598,7 +633,7 @@ class _MockChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    
+
     // Draw Y axis labels & horizontal lines
     final yLabels = ['0', '5M', '10M', '15M', '20M'];
     final linePaint = Paint()
@@ -610,7 +645,8 @@ class _MockChartPainter extends CustomPainter {
       const double dashWidth = 4, dashSpace = 4;
       double startX = start.dx;
       while (startX < end.dx) {
-        canvas.drawLine(Offset(startX, start.dy), Offset(startX + dashWidth, start.dy), linePaint);
+        canvas.drawLine(Offset(startX, start.dy),
+            Offset(startX + dashWidth, start.dy), linePaint);
         startX += dashWidth + dashSpace;
       }
     }
@@ -622,25 +658,30 @@ class _MockChartPainter extends CustomPainter {
 
     for (int i = 0; i < yLabels.length; i++) {
       final y = chartBottom - (i * chartHeight / 4);
-      textPainter.text = TextSpan(text: yLabels[i], style: TextStyle(color: Colors.grey.shade500, fontSize: 11));
+      textPainter.text = TextSpan(
+          text: yLabels[i],
+          style: TextStyle(color: Colors.grey.shade500, fontSize: 11));
       textPainter.layout();
       textPainter.paint(canvas, Offset(0, y - textPainter.height / 2));
-      
+
       drawDottedLine(Offset(chartLeft, y), Offset(size.width, y));
     }
 
     // Draw X axis labels
     final xLabels = ['01/05', '08/05', '15/05', '22/05', '31/05'];
     final double xStep = chartWidth / (xLabels.length - 1);
-    
+
     final nodePoints = <Offset>[];
 
     for (int i = 0; i < xLabels.length; i++) {
       final x = chartLeft + i * xStep;
-      textPainter.text = TextSpan(text: xLabels[i], style: TextStyle(color: Colors.grey.shade500, fontSize: 11));
+      textPainter.text = TextSpan(
+          text: xLabels[i],
+          style: TextStyle(color: Colors.grey.shade500, fontSize: 11));
       textPainter.layout();
-      textPainter.paint(canvas, Offset(x - textPainter.width / 2, chartBottom + 12));
-      
+      textPainter.paint(
+          canvas, Offset(x - textPainter.width / 2, chartBottom + 12));
+
       // Node point at y=0
       nodePoints.add(Offset(x, chartBottom));
     }
@@ -650,9 +691,9 @@ class _MockChartPainter extends CustomPainter {
       ..color = const Color(0xFF1C885B)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
-    
+
     for (int i = 0; i < nodePoints.length - 1; i++) {
-      canvas.drawLine(nodePoints[i], nodePoints[i+1], greenPaint);
+      canvas.drawLine(nodePoints[i], nodePoints[i + 1], greenPaint);
     }
 
     // Draw red nodes

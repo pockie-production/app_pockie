@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'home_page.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'services/auth_service.dart';
@@ -86,8 +87,8 @@ class _LoginPageState extends State<LoginPage> {
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureText
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
+                                  ? CupertinoIcons.eye_slash
+                                  : CupertinoIcons.eye,
                               color: textLight,
                             ),
                             onPressed: () {
@@ -153,50 +154,23 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: _isLoading
                                 ? null
                                 : () async {
-                                    if (_emailController.text.isEmpty ||
-                                        _passwordController.text.isEmpty) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              'Vui lòng nhập email và mật khẩu'),
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    setState(() {
-                                      _isLoading = true;
-                                    });
-
-                                    final success = await _authService.login(
-                                      _emailController.text.trim(),
-                                      _passwordController.text,
+                                    // Bỏ qua đăng nhập tạm thời theo yêu cầu
+                                    if (!mounted) return;
+                                    Navigator.pushReplacement(
+                                      context,
+                                      PageRouteBuilder(
+                                        pageBuilder: (context, animation, secondaryAnimation) => const HomePage(),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          var curve = Curves.easeInOutCubic;
+                                          var tween = Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: curve));
+                                          return FadeTransition(
+                                            opacity: animation.drive(tween),
+                                            child: child,
+                                          );
+                                        },
+                                        transitionDuration: const Duration(milliseconds: 600),
+                                      ),
                                     );
-
-                                    setState(() {
-                                      _isLoading = false;
-                                    });
-
-                                    if (success) {
-                                      if (!mounted) return;
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const HomePage()),
-                                      );
-                                    } else {
-                                      if (!mounted) return;
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              'Đăng nhập thất bại. Vui lòng kiểm tra lại email/mật khẩu.'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
                                   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: pockieGreen,

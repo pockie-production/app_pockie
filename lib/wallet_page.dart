@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'services/wallet_service.dart';
 import 'package:intl/intl.dart';
+import 'settings_page.dart';
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
@@ -39,9 +41,11 @@ class _WalletPageState extends State<WalletPage> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final overview = snapshot.data?[0] ?? {};
-        final accountsData = snapshot.data?[1] ?? {};
-        
+        final overview =
+            snapshot.data?[0] as Map<String, dynamic>? ?? <String, dynamic>{};
+        final accountsData =
+            snapshot.data?[1] as Map<String, dynamic>? ?? <String, dynamic>{};
+
         return SafeArea(
           bottom: false,
           child: RefreshIndicator(
@@ -55,13 +59,12 @@ class _WalletPageState extends State<WalletPage> {
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
+              padding: const EdgeInsets.only(
+                  left: 20, right: 20, top: 20, bottom: 120),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(),
-                  const SizedBox(height: 24),
-                  _buildActionButtons(),
                   const SizedBox(height: 24),
                   _buildTotalAssetCard(overview),
                   const SizedBox(height: 32),
@@ -83,10 +86,18 @@ class _WalletPageState extends State<WalletPage> {
       children: [
         Row(
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: _yellow,
-              child: const Icon(Icons.person, color: Colors.white, size: 28),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsPage()),
+                );
+              },
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: _yellow,
+                child: const Icon(CupertinoIcons.person_solid, color: Colors.white, size: 28),
+              ),
             ),
             const SizedBox(width: 16),
             Text(
@@ -111,46 +122,9 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  Widget _buildActionButtons() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {},
-                icon: Icon(Icons.add, color: _textDark),
-                label: Text('Thêm giao dịch', style: TextStyle(color: _textDark, fontWeight: FontWeight.bold)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(color: Colors.grey.shade300),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  backgroundColor: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {},
-                icon: Icon(Icons.document_scanner_outlined, color: _textDark),
-                label: Text('Smart Scan', style: TextStyle(color: _textDark, fontWeight: FontWeight.bold)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(color: Colors.grey.shade300),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  backgroundColor: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
   Widget _buildTotalAssetCard(Map<String, dynamic>? overview) {
-    final summary = overview?['summary'] ?? {};
+    final summary =
+        overview?['summary'] as Map<String, dynamic>? ?? <String, dynamic>{};
     final balance = summary['balance'] ?? '0';
     final diffAmount = summary['diffAmount'] ?? '0';
     final formatter = NumberFormat('#,###', 'vi_VN');
@@ -176,12 +150,12 @@ class _WalletPageState extends State<WalletPage> {
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(Icons.visibility_outlined, color: _textDark, size: 20),
+              Icon(CupertinoIcons.eye, color: _textDark, size: 20),
             ],
           ),
           const SizedBox(height: 16),
           Text(
-              '${formatter.format(double.tryParse(balance) ?? 0)}đ',
+            '${formatter.format(double.tryParse(balance) ?? 0)}đ',
             style: TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w900,
@@ -192,7 +166,8 @@ class _WalletPageState extends State<WalletPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.arrow_downward, color: Colors.green.shade400, size: 16),
+              Icon(CupertinoIcons.arrow_down,
+                  color: Colors.green.shade400, size: 16),
               const SizedBox(width: 4),
               Text(
                 '${formatter.format(double.tryParse(diffAmount) ?? 0)}đ so với tháng trước',
@@ -227,7 +202,12 @@ class _WalletPageState extends State<WalletPage> {
                 color: isSelected ? Colors.white : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: isSelected
-                    ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))]
+                    ? [
+                        BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4))
+                      ]
                     : [],
               ),
               child: Text(
@@ -265,22 +245,32 @@ class _WalletPageState extends State<WalletPage> {
       child: Row(
         children: [
           Expanded(
-            child: _buildSummaryBox('Thu nhập', '${formatter.format(double.tryParse(income) ?? 0)}đ', const Color(0xFFE8F5EE), _primaryGreen),
+            child: _buildSummaryBox(
+                'Thu nhập',
+                '${formatter.format(double.tryParse(income) ?? 0)}đ',
+                const Color(0xFFE8F5EE),
+                _primaryGreen),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _buildSummaryBox('Chi tiêu', '${formatter.format(double.tryParse(expense) ?? 0)}đ', const Color(0xFFE8F5EE), _primaryGreen),
+            child: _buildSummaryBox(
+                'Chi tiêu',
+                '${formatter.format(double.tryParse(expense) ?? 0)}đ',
+                const Color(0xFFE8F5EE),
+                _primaryGreen),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _buildSummaryBox('Tiết kiệm', '$savingsPercent%', const Color(0xFFE8F5EE), _yellow),
+            child: _buildSummaryBox('Tiết kiệm', '$savingsPercent%',
+                const Color(0xFFE8F5EE), _yellow),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryBox(String title, String amount, Color bgColor, Color amountColor) {
+  Widget _buildSummaryBox(
+      String title, String amount, Color bgColor, Color amountColor) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
@@ -289,9 +279,17 @@ class _WalletPageState extends State<WalletPage> {
       ),
       child: Column(
         children: [
-          Text(title, style: TextStyle(color: _textLight, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(title,
+              style: TextStyle(
+                  color: _textLight,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          Text(amount, style: TextStyle(color: amountColor, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(amount,
+              style: TextStyle(
+                  color: amountColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -305,7 +303,8 @@ class _WalletPageState extends State<WalletPage> {
       children: [
         Text(
           'Phân bổ tài sản',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textDark),
+          style: TextStyle(
+              fontSize: 20, fontWeight: FontWeight.bold, color: _textDark),
         ),
         const SizedBox(height: 16),
         Container(
@@ -318,14 +317,17 @@ class _WalletPageState extends State<WalletPage> {
           child: Column(
             children: [
               if (allocations.isEmpty)
-                Text('Chưa có dữ liệu phân bổ.', style: TextStyle(color: _textLight))
+                Text('Chưa có dữ liệu phân bổ.',
+                    style: TextStyle(color: _textLight))
               else ...[
                 Row(
                   children: allocations.map((a) {
-                    final p = double.tryParse(a['percent']?.toString() ?? '0') ?? 0;
+                    final p =
+                        double.tryParse(a['percent']?.toString() ?? '0') ?? 0;
                     if (p <= 0) return const SizedBox.shrink();
                     final colorStr = (a['color'] as String?) ?? '#1C885B';
-                    final color = Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
+                    final color =
+                        Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
                     return Expanded(
                       flex: p.toInt(),
                       child: Container(height: 16, color: color),
@@ -337,14 +339,16 @@ class _WalletPageState extends State<WalletPage> {
                   final idx = entry.key;
                   final a = entry.value;
                   final colorStr = (a['color'] as String?) ?? '#1C885B';
-                  final color = Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
+                  final color =
+                      Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
                   return Column(
                     children: [
                       _buildAllocationItem(
                         color: color,
                         title: a['title'] ?? 'Khác',
                         percentage: '${a['percent'] ?? 0}%',
-                        amount: '${formatter.format(double.tryParse(a['amount']?.toString() ?? '0') ?? 0)}đ',
+                        amount:
+                            '${formatter.format(double.tryParse(a['amount']?.toString() ?? '0') ?? 0)}đ',
                       ),
                       if (idx < allocations.length - 1)
                         const Divider(height: 24),
@@ -359,15 +363,27 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  Widget _buildAllocationItem({required Color color, required String title, required String percentage, required String amount}) {
+  Widget _buildAllocationItem(
+      {required Color color,
+      required String title,
+      required String percentage,
+      required String amount}) {
     return Row(
       children: [
-        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 12),
-        Expanded(child: Text(title, style: TextStyle(color: _textDark, fontWeight: FontWeight.w600))),
-        Text(percentage, style: TextStyle(color: _textLight, fontWeight: FontWeight.bold)),
+        Expanded(
+            child: Text(title,
+                style:
+                    TextStyle(color: _textDark, fontWeight: FontWeight.w600))),
+        Text(percentage,
+            style: TextStyle(color: _textLight, fontWeight: FontWeight.bold)),
         const SizedBox(width: 16),
-        Text(amount, style: TextStyle(color: _textDark, fontWeight: FontWeight.bold)),
+        Text(amount,
+            style: TextStyle(color: _textDark, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -379,7 +395,7 @@ class _WalletPageState extends State<WalletPage> {
     // Convert raw API accounts to local format
     final wallets = rawAccounts.map((acc) {
       final type = acc['type'] as String? ?? 'cash';
-      
+
       Color color1, color2;
       Widget iconWidget;
 
@@ -390,35 +406,52 @@ class _WalletPageState extends State<WalletPage> {
           iconWidget = Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.star, color: Colors.white, size: 16),
+              const Icon(CupertinoIcons.star_fill, color: Colors.white, size: 16),
               const SizedBox(width: 4),
-              const Text('MB', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
+              const Text('MB',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 20)),
             ],
           );
           break;
         case 'momo':
           color1 = const Color(0xFFDF81DD);
           color2 = const Color(0xFFC052CA);
-          iconWidget = const Text('mo\nmo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white, height: 1.0));
+          iconWidget = const Text('mo\nmo',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.white,
+                  height: 1.0));
           break;
         case 'zalopay':
           color1 = const Color(0xFF67A1F8);
           color2 = const Color(0xFF458BF3);
           iconWidget = Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
-            child: const Text('Zalo\nPay', style: TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold, height: 1.0)),
+            decoration: BoxDecoration(
+                color: Colors.white, borderRadius: BorderRadius.circular(4)),
+            child: const Text('Zalo\nPay',
+                style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    height: 1.0)),
           );
           break;
         default:
           color1 = const Color(0xFFFBB362);
           color2 = const Color(0xFFF2913D);
-          iconWidget = const Icon(Icons.payments_outlined, color: Colors.white, size: 28);
+          iconWidget = const Icon(CupertinoIcons.money_dollar_circle,
+              color: Colors.white, size: 28);
       }
 
       return {
         'name': acc['name'] ?? 'Tài khoản',
-        'balance': '${formatter.format(double.tryParse(acc['balance']?.toString() ?? '0') ?? 0)}đ',
+        'balance':
+            '${formatter.format(double.tryParse(acc['balance']?.toString() ?? '0') ?? 0)}đ',
         'number': acc['accountNumber'] ?? '',
         'colors': [color1, color2],
         'isPrimary': acc['isPrimary'] == true,
@@ -431,7 +464,8 @@ class _WalletPageState extends State<WalletPage> {
       children: [
         Text(
           'Ví của tôi',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textDark),
+          style: TextStyle(
+              fontSize: 20, fontWeight: FontWeight.bold, color: _textDark),
         ),
         const SizedBox(height: 16),
         SizedBox(
@@ -455,7 +489,8 @@ class _WalletPageState extends State<WalletPage> {
                           color: Color(0xFF2D3748),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.add, color: Colors.white, size: 20),
+                        child: const Icon(CupertinoIcons.add,
+                            color: Colors.white, size: 20),
                       ),
                     ),
                   ),
@@ -498,21 +533,26 @@ class _WalletPageState extends State<WalletPage> {
             children: [
               w['isPrimary'] == true
                   ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.push_pin, color: Colors.white, size: 10),
+                          Icon(CupertinoIcons.pin_fill, color: Colors.white, size: 10),
                           SizedBox(width: 4),
-                          Text('Thẻ chính', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                          Text('Thẻ chính',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600)),
                         ],
                       ),
                     )
                   : const SizedBox(),
-              const Icon(Icons.star_border, color: Colors.white, size: 20),
+              const Icon(CupertinoIcons.star, color: Colors.white, size: 20),
             ],
           ),
           const Spacer(),
@@ -520,18 +560,21 @@ class _WalletPageState extends State<WalletPage> {
           const SizedBox(height: 12),
           Text(
             w['name'] as String,
-            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 2),
           Text(
             w['balance'] as String,
-            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
           ),
           if ((w['number'] as String).isNotEmpty) ...[
             const SizedBox(height: 2),
             Text(
               w['number'] as String,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
             ),
           ]
         ],
@@ -561,7 +604,8 @@ class _DashedBorderPainter extends CustomPainter {
       while (distance < metric.length) {
         final length = draw ? 6.0 : 4.0;
         if (draw) {
-          dashedPath.addPath(metric.extractPath(distance, distance + length), Offset.zero);
+          dashedPath.addPath(
+              metric.extractPath(distance, distance + length), Offset.zero);
         }
         distance += length;
         draw = !draw;
@@ -583,10 +627,14 @@ class _CurvedLinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final path = Path();
     path.moveTo(0, size.height * 0.8);
-    path.quadraticBezierTo(size.width * 0.15, size.height * 0.7, size.width * 0.3, size.height * 0.9);
-    path.quadraticBezierTo(size.width * 0.45, size.height * 1.1, size.width * 0.55, size.height * 0.6);
-    path.quadraticBezierTo(size.width * 0.7, size.height * 0.3, size.width * 0.8, size.height * 0.3);
-    path.quadraticBezierTo(size.width * 0.9, size.height * 0.3, size.width, size.height * 0.2);
+    path.quadraticBezierTo(size.width * 0.15, size.height * 0.7,
+        size.width * 0.3, size.height * 0.9);
+    path.quadraticBezierTo(size.width * 0.45, size.height * 1.1,
+        size.width * 0.55, size.height * 0.6);
+    path.quadraticBezierTo(size.width * 0.7, size.height * 0.3,
+        size.width * 0.8, size.height * 0.3);
+    path.quadraticBezierTo(
+        size.width * 0.9, size.height * 0.3, size.width, size.height * 0.2);
 
     // Fill paint
     final fillPaint = Paint()
@@ -614,7 +662,8 @@ class _CurvedLinePainter extends CustomPainter {
       ..color = Colors.grey.shade300
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(0, size.height), Offset(size.width, size.height), bottomLinePaint);
+    canvas.drawLine(Offset(0, size.height), Offset(size.width, size.height),
+        bottomLinePaint);
   }
 
   @override

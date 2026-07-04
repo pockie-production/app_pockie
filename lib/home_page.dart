@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'wallet_page.dart';
 import 'voucher_page.dart';
 import 'report_page.dart';
 import 'smart_scan_page.dart';
 import 'services/dashboard_service.dart';
+import 'settings_page.dart';
 import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
@@ -37,25 +39,49 @@ class _HomePageState extends State<HomePage> {
       extendBody: true, // Allows body to scroll under the transparent bottom nav
       body: Stack(
         children: [
-          IndexedStack(
-            index: _selectedIndex,
+          Stack(
             children: [
-              FutureBuilder<Map<String, dynamic>?>(
-                future: _dashboardFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  return _buildHomeContent(snapshot.data);
-                },
+              _buildFadingPage(
+                index: 0,
+                child: FutureBuilder<Map<String, dynamic>?>(
+                  future: _dashboardFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    return _buildHomeContent(snapshot.data);
+                  },
+                ),
               ),
-              const WalletPage(),
-              const VoucherPage(),
-              const ReportPage(),
+              _buildFadingPage(
+                index: 1,
+                child: const WalletPage(),
+              ),
+              _buildFadingPage(
+                index: 2,
+                child: const VoucherPage(),
+              ),
+              _buildFadingPage(
+                index: 3,
+                child: const ReportPage(),
+              ),
             ],
           ),
           _buildFloatingBottomNav(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFadingPage({required int index, required Widget child}) {
+    final isSelected = _selectedIndex == index;
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+      opacity: isSelected ? 1.0 : 0.0,
+      child: IgnorePointer(
+        ignoring: !isSelected,
+        child: child,
       ),
     );
   }
@@ -97,17 +123,25 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHeader(Map<String, dynamic>? data) {
     final name = data?['profile']?['name'] ?? 'Bạn';
-    final unreadCount = data?['notifications']?['unreadCount'] ?? 0;
+    final unreadCount = data?['notifications']?['unreadCount'] ?? 1;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Row(
           children: [
-            CircleAvatar(
-              radius: 26,
-              backgroundColor: const Color(0xFFF3C755), // Yellow from image
-              child: const Icon(Icons.person, color: Colors.white, size: 32),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsPage()),
+                );
+              },
+              child: const CircleAvatar(
+                radius: 26,
+                backgroundColor: Color(0xFFF3C755), // Yellow from image
+                child: Icon(CupertinoIcons.person_solid, color: Colors.white, size: 32),
+              ),
             ),
             const SizedBox(width: 12),
               Column(
@@ -134,27 +168,88 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        Stack(
-          clipBehavior: Clip.none,
+        GestureDetector(
+          onTap: () => _showNotificationPopup(context),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(CupertinoIcons.bell, size: 32, color: _textDark),
+              if (unreadCount > 0)
+                Positioned(
+                  right: 2,
+                  top: 2,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFED6C61), // Red dot color
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _bgColor, width: 2.5),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showNotificationPopup(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.transparent,
+      builder: (context) {
+        return Stack(
           children: [
-            Icon(Icons.notifications_none, size: 32, color: _textDark),
-            if (unreadCount > 0)
-              Positioned(
-                right: 2,
-                top: 2,
+            Positioned(
+              top: 100,
+              right: 20,
+              child: Material(
+                color: Colors.transparent,
                 child: Container(
-                  width: 12,
-                  height: 12,
+                  width: 250,
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFED6C61), // Red dot color
-                    shape: BoxShape.circle,
-                    border: Border.all(color: _bgColor, width: 2.5),
+                    color: const Color(0xFFFBF8EE), // Light cream color matching image
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text(
+                        'Vietcombank',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'Bồ có một ưu đãi mới từ Vietcombank nè!',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
+            ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -314,7 +409,7 @@ class _HomePageState extends State<HomePage> {
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.trending_up,
+                CupertinoIcons.graph_square,
                 color: Colors.orange,
               ),
             ),
@@ -354,7 +449,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.monetization_on_outlined, color: _primaryGreen),
+                  Icon(CupertinoIcons.money_dollar_circle, color: _primaryGreen),
                   const SizedBox(width: 8),
                   Text(
                     'Ví của bạn',
@@ -377,7 +472,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Text(month, style: TextStyle(color: _textDark, fontWeight: FontWeight.w600)),
                     const SizedBox(width: 4),
-                    const Icon(Icons.keyboard_arrow_down, size: 18),
+                    const Icon(CupertinoIcons.chevron_down, size: 18),
                   ],
                 ),
               ),
@@ -492,7 +587,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.auto_awesome, color: _primaryGreen, size: 20),
+                    Icon(CupertinoIcons.sparkles, color: _primaryGreen, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       'AI Insight',
@@ -526,7 +621,7 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Text('Xem gợi ý', style: TextStyle(color: _primaryGreen, fontWeight: FontWeight.bold)),
                       const SizedBox(width: 4),
-                      Icon(Icons.chevron_right, color: _primaryGreen, size: 18),
+                      Icon(CupertinoIcons.chevron_right, color: _primaryGreen, size: 18),
                     ],
                   ),
                 ),
@@ -622,7 +717,7 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.grey.shade100,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.receipt_long, color: _textDark),
+                      child: Icon(CupertinoIcons.doc_plaintext, color: _textDark),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -766,20 +861,20 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.home_outlined, size: 28, color: _selectedIndex == 0 ? _primaryGreen : _textDark),
+                      icon: Icon(CupertinoIcons.home, size: 28, color: _selectedIndex == 0 ? _primaryGreen : _textDark),
                       onPressed: () => setState(() => _selectedIndex = 0),
                     ),
                     IconButton(
-                      icon: Icon(Icons.account_balance_wallet_outlined, size: 28, color: _selectedIndex == 1 ? _primaryGreen : _textDark),
+                      icon: Icon(CupertinoIcons.creditcard, size: 28, color: _selectedIndex == 1 ? _primaryGreen : _textDark),
                       onPressed: () => setState(() => _selectedIndex = 1),
                     ),
                     const SizedBox(width: 64), // Space for FAB
                     IconButton(
-                      icon: Icon(Icons.card_giftcard, size: 28, color: _selectedIndex == 2 ? _primaryGreen : _textDark),
+                      icon: Icon(CupertinoIcons.gift, size: 28, color: _selectedIndex == 2 ? _primaryGreen : _textDark),
                       onPressed: () => setState(() => _selectedIndex = 2),
                     ),
                     IconButton(
-                      icon: Icon(Icons.pie_chart_outline, size: 28, color: _selectedIndex == 3 ? _primaryGreen : _textDark),
+                      icon: Icon(CupertinoIcons.chart_pie, size: 28, color: _selectedIndex == 3 ? _primaryGreen : _textDark),
                       onPressed: () => setState(() => _selectedIndex = 3),
                     ),
                   ],
@@ -788,29 +883,33 @@ class _HomePageState extends State<HomePage> {
             ),
             // The FAB
             Positioned(
-              top: 0,
+              top: -25,
               child: GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SmartScanPage()),
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) => const SmartScanPage(),
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        return ScaleTransition(
+                          alignment: Alignment.bottomCenter,
+                          scale: CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        );
+                      },
+                      transitionDuration: const Duration(milliseconds: 400),
+                    ),
                   );
                 },
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _primaryGreen,
-                    boxShadow: [
-                      BoxShadow(
-                        color: _primaryGreen.withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 30),
+                child: Image.asset(
+                  'assets/animation/victory.webp',
+                  height: 110,
                 ),
               ),
             ),
